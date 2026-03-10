@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useLoginMutation } from '../../hooks/useAuth';
-import Button from '../Button';
+import Button from '../ui/Button';
 
 export default function Login() {
   const [username, setUsername] = useState('');

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, UserPlus } from 'lucide-react';
-import Button from '../Button';
+import Button from '../ui/Button';
 import { useRegisterMutation } from '../../hooks/useAuth';
 
 export default function Register() {
