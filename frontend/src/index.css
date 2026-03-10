@@ -2,8 +2,9 @@
 
 :root {
   /* System Brand - Slate Blue Tint */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
+  --color-primary: #03588c;
+  --color-primary-hover: #024168;
+  --color-sec: #048e72;
   
   /* Telemetry Status Colors */
   --color-status-success: #10b981;    /* Healthy */
@@ -32,7 +33,6 @@
     --color-card-border: #1e293b;     /* Slate-800 */
     --color-panel: #1e293b;
 
-    --color-primary: #3b82f6;
     --color-status-success: #34d399;
     --color-status-warning: #fbbf24;
     --color-status-critical: #f87171;
