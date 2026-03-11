@@ -6,38 +6,24 @@ services:
       - ../backend:/backend
     ports:
       - "6767:6767"
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "npm install && npx prisma generate && npm run dev"
     networks:
       - custom-network
-    depends_on:
-      - db
-    environment:
-      PORT: 6767
-      DB_HOST: ${DB_HOST}
-      DB_USER: ${DB_USER}
-      DB_PWD: ${DB_PWD}
-      DB_PORT: 26257
-      DB_NAME: ${DB_NAME}
+    env_file:
+      - ../backend/.env
 
   frontend:
     image: node:24.7.0-alpine
     working_dir: /frontend
-    environment:
-      - PORT=3000
+    ports:
+      - "5173:5173"
     volumes:
       - ../frontend:/frontend
-    ports:
-      - "3000:3000"
-    command: sh -c "npm install && npm run dev"
-
-  db:
-    image: cockroachdb/cockroach:v26.1.0
     networks:
       - custom-network
-    ports:
-      - "8080:8080"
-      - "26257:26257"
-    command: start-single-node --insecure
+    command: sh -c "npm install && npm run dev -- --host"
+    env_file:
+      - ../frontend/.env
 
 networks:
   custom-network:
