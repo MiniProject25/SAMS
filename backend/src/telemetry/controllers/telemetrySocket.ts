@@ -2,23 +2,33 @@ import { prisma } from "../../db/prisma.js";
 import { Server, Socket } from "socket.io";
 import redisClient from "../../lib/redis.js";
 import { ISystemTelemetryPayload } from "../types.js";
+import { IAsset } from "../../types/asset.type.js";
+import { ITelemetry } from "../../types/telemetry.type.js";
 
 export const setUpTelemetrySocket = (io: Server) => {
   io.on("connection", (socket: Socket) => {
     console.log(`New connection established: ${socket.id}`);
+
+    const userId = socket.handshake.auth.userId;
+    if (userId) {
+      socket.join(`user_room_${userId}`);
+    }
 
     socket.on("telemetry_stream", async (payload: ISystemTelemetryPayload) => {
       try {
         const { mac_address, cpu, memory, battery, timestamp } = payload;
         if (!mac_address) return;
 
+        // store the mac addr in the socket
         if (!socket.data.mac_address) {
           socket.data.mac_address = mac_address;
         }
 
+        // check the redis store for assetId
         const cacheKey = `mac_to_asset_id:${mac_address}`;
         let assetId = await redisClient.get(cacheKey);
 
+        // if no assetId then get from db
         if (!assetId) {
           const asset = await prisma.asset.findUnique({
             where: { macAddr: mac_address },
@@ -30,6 +40,7 @@ export const setUpTelemetrySocket = (io: Server) => {
             return;
           }
 
+          // cache the assetId mapped to the mac_addr
           assetId = asset.id as string;
           await redisClient.set(cacheKey, assetId, {
             expiration: {
@@ -39,7 +50,7 @@ export const setUpTelemetrySocket = (io: Server) => {
           });
         }
 
-        const [_updatedAsset, telemetryRecord] = await prisma.$transaction([
+        const [updatedAsset, telemetryRecord] = (await prisma.$transaction([
           prisma.asset.update({
             where: { id: assetId },
             data: { status: "ONLINE" },
@@ -62,14 +73,14 @@ export const setUpTelemetrySocket = (io: Server) => {
               timestamp: new Date(timestamp * 1000),
             },
           }),
-        ]);
+        ])) as [IAsset, ITelemetry];
 
-        // TODO: add rooms to send to a particular user
-        /*         io.emit("dashboard_update", {
-          assetId: telemetryRecord.assetId,
-          mac_address,
-          latestTelemetry: telemetryRecord,
-        }); */
+        if (updatedAsset.ownerId) {
+          io.to(`user_room_${userId}`).emit("dashboard_update", {
+            mac_address,
+            latestTelemetry: telemetryRecord,
+          });
+        }
       } catch (error) {
         console.error("Error processing telemetry stream:", error);
       }
