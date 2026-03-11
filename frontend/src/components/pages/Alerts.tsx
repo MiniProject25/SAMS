@@ -1,131 +1,58 @@
-import React, { useEffect, useState } from "react";
-import { AlertTriangle, BatteryWarning, CheckCircle, Clock, Cpu, Info, Activity } from "lucide-react";
-import { type Alert, type AlertCategory, type AlertSeverity} from "../../types/Alerts";
+import React, { useState } from "react";
+import { CheckCircle, Clock } from "lucide-react";
 import { useAlertFilters } from "../../hooks/useAlertFilters";
-import { SERVER_URL } from "../../config/config";
-import { useAuthStore } from "../../store/useAuthStore";
-
+import { useAlerts } from "../../hooks/queries/useAlert"; // Using the refactored TanStack hook
+import { getAlertTheme, getAlertIcon, formatAlertLabel } from "../../utils/AlertHelpers"; // Your new utils
 
 export default function Alerts() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'ACTIVE' | 'RESOLVED'>('ACTIVE');
-  const token = useAuthStore(state => state.token);
 
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const response = await fetch(`${SERVER_URL}/api/alert`, {
-          headers: {
-            'authorization': `Bearer ${token}`
-          },
-          method: "GET"
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          
-          // Map the backend JSON to match the frontend Alert interface
-          const formattedAlerts = result.data.map((rawAlert: any) => {
-            // Derive the category based on the metric string
-            let derivedCategory = "INFO";
-            if (rawAlert.metric.includes("TEMP")) derivedCategory = "THERMAL";
-            else if (rawAlert.metric.includes("USAGE")) derivedCategory = "PERFORMANCE";
-            
-            return {
-              id: rawAlert.id,
-              assetId: rawAlert.assetId,
-              severity: rawAlert.type,     // Map backend 'type' -> frontend 'severity'
-              type: rawAlert.metric,       // Map backend 'metric' -> frontend 'type'
-              category: derivedCategory,   // Inject the derived category
-              message: rawAlert.message,
-              isResolved: rawAlert.isResolved,
-              createdAt: rawAlert.createdAt,
-              updatedAt: rawAlert.updatedAt,
-            };
-          });
+  // 1. TanStack Query Hook replaces local state/useEffect
+  const { data: alerts = [], isLoading, isError } = useAlerts();
 
-          setAlerts(formattedAlerts); 
-        }
-      } catch (error) {
-        console.error("Failed to fetch alerts:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Only run the fetch if we actually have a token
-    if (token) {
-      fetchAlerts();
-    }
-  }, [token]); // Added token to the dependency array
-
-  // 2. Apply your custom filter hook
+  // 2. Apply custom filter hook
   const { activeAlerts, resolvedAlerts, sortBySeverity } = useAlertFilters(alerts);
 
-  // 3. Determine which list to show, and sort the active ones by severity
-  const displayedAlerts = viewMode === 'ACTIVE' 
-    ? sortBySeverity(activeAlerts) 
+  // 3. Determine which list to show
+  const displayedAlerts = viewMode === 'ACTIVE'
+    ? sortBySeverity(activeAlerts)
     : resolvedAlerts;
-
-  // Visual mapping for categories
-  const getCategoryIcon = (category: AlertCategory) => {
-    switch (category) {
-      case "THERMAL": return <AlertTriangle size={16} className="text-red-400" />;
-      case "PERFORMANCE": return <Cpu size={16} className="text-orange-400" />;
-      case "BATTERY": return <BatteryWarning size={16} className="text-yellow-400" />;
-      case "CONNECTIVITY": return <Activity size={16} className="text-blue-400" />;
-      default: return <Info size={16} className="text-gray-400" />;
-    }
-  };
-
-  // Visual mapping for severity badges
-  const getSeverityStyle = (severity: AlertSeverity) => {
-    switch (severity) {
-      case "CRITICAL": return "bg-red-500/10 text-red-400 border-red-500/20";
-      case "WARNING": return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
-      case "INFO": return "bg-blue-500/10 text-blue-400 border-blue-500/20";
-      default: return "bg-gray-500/10 text-gray-400 border-gray-500/20";
-    }
-  };
 
   // Format the ISO timestamp to a readable date
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
-    return date.toLocaleString('en-US', { 
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+    return date.toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   };
 
   return (
     <div className="w-full bg-(--color-card) border border-(--color-card-border) rounded-2xl shadow-xl overflow-hidden font-sans">
-      
+
       {/* Table Header Section with View Toggle */}
       <div className="p-6 border-b border-(--color-card-border) flex justify-between items-center bg-gradient-to-b from-(--color-card) to-(--color-panel)/30">
         <div>
           <h2 className="text-lg font-semibold text-gray-100">System Alerts</h2>
           <p className="text-sm text-gray-400 mt-1">Monitor automated hardware diagnostics across the network.</p>
         </div>
-        
+
         {/* Active vs Resolved Toggle */}
         <div className="flex bg-(--color-panel) p-1 rounded-lg border border-(--color-card-border)">
-          <button 
+          <button
             onClick={() => setViewMode('ACTIVE')}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-              viewMode === 'ACTIVE' 
-                ? 'bg-(--color-card) text-gray-100 shadow-sm border border-(--color-card-border)' 
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'ACTIVE'
+                ? 'bg-(--color-card) text-gray-100 shadow-sm border border-(--color-card-border)'
                 : 'text-gray-500 hover:text-gray-300'
-            }`}
+              }`}
           >
             Active ({activeAlerts.length})
           </button>
-          <button 
+          <button
             onClick={() => setViewMode('RESOLVED')}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-              viewMode === 'RESOLVED' 
-                ? 'bg-(--color-card) text-gray-100 shadow-sm border border-(--color-card-border)' 
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'RESOLVED'
+                ? 'bg-(--color-card) text-gray-100 shadow-sm border border-(--color-card-border)'
                 : 'text-gray-500 hover:text-gray-300'
-            }`}
+              }`}
           >
             Resolved ({resolvedAlerts.length})
           </button>
@@ -152,6 +79,12 @@ export default function Alerts() {
                   Loading telemetry alerts...
                 </td>
               </tr>
+            ) : isError ? (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-red-400 text-sm">
+                  Failed to load alerts.
+                </td>
+              </tr>
             ) : displayedAlerts.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-gray-500 text-sm">
@@ -159,52 +92,54 @@ export default function Alerts() {
                 </td>
               </tr>
             ) : (
-              displayedAlerts.map((alert) => (
-                <tr key={alert.id} className="hover:bg-(--color-panel)/50 transition-colors">
-                  
-                  <td className="py-4 px-6 text-sm font-medium text-gray-200">
-                    <span className="font-mono text-xs text-gray-400">{alert.assetId.substring(0, 8)}...</span>
-                  </td>
+              displayedAlerts.map((alert) => {
+                const CategoryIcon = getAlertIcon(alert.category);
 
-                  <td className="py-4 px-6 text-sm">
-                    <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold tracking-wider border ${getSeverityStyle(alert.severity)}`}>
-                      {alert.severity}
-                    </span>
-                  </td>
-                  
-                  <td className="py-4 px-6 text-sm text-gray-300">
-                    <div className="flex items-center gap-2 font-medium">
-                      {getCategoryIcon(alert.category)}
-                      {alert.type.replace(/_/g, ' ')}
-                    </div>
-                  </td>
-                  
-                  <td className="py-4 px-6 text-sm text-gray-300">
-                    {alert.message}
-                  </td>
-                  
-                  <td className="py-4 px-6 text-sm">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                      !alert.isResolved 
-                        ? 'bg-red-500/10 text-red-400 border-red-500/20' 
-                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    }`}>
-                      {!alert.isResolved ? <Clock size={12} /> : <CheckCircle size={12} />}
-                      {!alert.isResolved ? 'Active' : 'Resolved'}
-                    </span>
-                  </td>
-                  
-                  <td className="py-4 px-6 text-sm text-gray-400 text-right whitespace-nowrap">
-                    {formatTime(alert.createdAt)}
-                  </td>
-                  
-                </tr>
-              ))
+                return (
+                  <tr key={alert.id} className="hover:bg-(--color-panel)/50 transition-colors">
+
+                    <td className="py-4 px-6 text-sm font-medium text-gray-200">
+                      <span className="font-mono text-xs text-gray-400">{alert.assetId.substring(0, 8)}...</span>
+                    </td>
+
+                    <td className="py-4 px-6 text-sm">
+                      <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold tracking-wider border ${getAlertTheme(alert.severity)}`}>
+                        {alert.severity}
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-6 text-sm text-gray-300">
+                      <div className="flex items-center gap-2 font-medium">
+                        <CategoryIcon size={16} className="opacity-70" />
+                        {formatAlertLabel(alert.type)}
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-6 text-sm text-gray-300">
+                      {alert.message}
+                    </td>
+
+                    <td className="py-4 px-6 text-sm">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${!alert.isResolved
+                          ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        }`}>
+                        {!alert.isResolved ? <Clock size={12} /> : <CheckCircle size={12} />}
+                        {!alert.isResolved ? 'Active' : 'Resolved'}
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-6 text-sm text-gray-400 text-right whitespace-nowrap">
+                      {formatTime(alert.createdAt)}
+                    </td>
+
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
       </div>
-      
     </div>
   );
 }

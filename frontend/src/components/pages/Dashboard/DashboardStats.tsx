@@ -6,11 +6,13 @@ import { toast } from "sonner";
 import { useDashboardStore } from "../../../store/useDashBoardStore";
 
 export default function DashboardStats() {
-  const { data, isLoading, isError } = useDashboardStats();
+  const { data, isLoading, isError, error } = useDashboardStats();
   const updateStats = useDashboardStore(state => state.updateStats)
   useEffect(() => {
     if (isError) {
-      toast.error("Failed to load dashboard stats");
+      toast.error("Failed to load dashboard stats", {
+        description:error.message
+      });
     }
   }, [isError]);
 
@@ -18,7 +20,7 @@ export default function DashboardStats() {
     if (data?.activeAlerts) {
       updateStats(data.actitveAlerts);
     }
-  })
+  },[updateStats,data])
 
   const stats = [
     {

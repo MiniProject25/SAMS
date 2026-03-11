@@ -176,7 +176,7 @@ function MacWhitelistModal({ onClose }: { onClose: () => void }) {
       .filter(idx => idx !== -1);
   };
 
-  const { mutate: addMacs, isPending, isError } = useAddMacsMutation();
+  const { mutate: addMacs, isPending } = useAddMacsMutation();
 
   const validateAndSave = () => {
     const newErrors = getInvalidMacIndices();
@@ -264,8 +264,8 @@ function MacWhitelistModal({ onClose }: { onClose: () => void }) {
 
           <button
             onClick={validateAndSave}
-            disabled={isPending || isError}
-            className={`mt-6 w-full py-2.5 bg-linear-to-r from-(--color-primary) to-(--color-sec) text-white rounded-xl font-bold text-sm shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer ${isPending || isError ? "opacity-50 cursor-not-allowed" : ""
+            disabled={isPending}
+            className={`mt-6 w-full py-2.5 bg-linear-to-r from-(--color-primary) to-(--color-sec) text-white rounded-xl font-bold text-sm shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer ${isPending ? "opacity-50 cursor-not-allowed" : ""
               }`}
           >
             {isPending && <Loader2 className="animate-spin h-4 w-4" />}
