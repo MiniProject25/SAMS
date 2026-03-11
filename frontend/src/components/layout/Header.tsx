@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Bell, Search, LogOut, Cpu, X, Plus, Trash2, AlertCircle, PlusCircle } from 'lucide-react';
+import { User, Bell, Search, LogOut, Cpu, X, Plus, Trash2, AlertCircle, PlusCircle, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useDashboardStore } from '../../store/useDashBoardStore';
+import { useAddMacsMutation } from '../../hooks/queries/useAddMacs';
 
 export default function Header() {
   const { pathname } = useLocation();
@@ -9,6 +11,7 @@ export default function Header() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // State for the Modal
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const activeAlerts = useDashboardStore((state) => state.activeAlerts);
 
   const getPageTitle = (path: string) => {
     if (path.includes('/dashboard/')) return 'Asset Details';
@@ -54,8 +57,9 @@ export default function Header() {
 
           <button className="p-2 text-gray-500 hover:bg-(--color-panel) rounded-full transition-colors relative cursor-pointer">
             <Bell size={20} />
-            {/* Red Dot indicator only if present: TODO*/}
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-(--color-card)"></span>
+            {activeAlerts > 0 && (
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-(--color-card) animate-pulse" />
+            )}
           </button>
 
           <span className="absolute top-full mt-2 px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
@@ -172,6 +176,8 @@ function MacWhitelistModal({ onClose }: { onClose: () => void }) {
       .filter(idx => idx !== -1);
   };
 
+  const { mutate: addMacs, isPending, isError } = useAddMacsMutation();
+
   const validateAndSave = () => {
     const newErrors = getInvalidMacIndices();
     if (newErrors.length > 0) {
@@ -179,11 +185,13 @@ function MacWhitelistModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    // TODO: Call to backend with list of mac address
-
-    localStorage.removeItem('blera_mac_draft');
-    console.log("Saving valid MACs to API:", macs);
-    onClose();
+    // Call backend
+    addMacs(macs, {
+      onSuccess: () => {
+        localStorage.removeItem("blera_mac_draft");
+        onClose();
+      },
+    });
   };
 
   const addAnotherDevice = () => {
@@ -256,8 +264,11 @@ function MacWhitelistModal({ onClose }: { onClose: () => void }) {
 
           <button
             onClick={validateAndSave}
-            className="mt-6 w-full py-2.5 bg-linear-to-r from-(--color-primary) to-(--color-sec) text-white rounded-xl font-bold text-sm shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
+            disabled={isPending || isError}
+            className={`mt-6 w-full py-2.5 bg-linear-to-r from-(--color-primary) to-(--color-sec) text-white rounded-xl font-bold text-sm shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer ${isPending || isError ? "opacity-50 cursor-not-allowed" : ""
+              }`}
           >
+            {isPending && <Loader2 className="animate-spin h-4 w-4" />}
             Register Device
           </button>
         </div>
