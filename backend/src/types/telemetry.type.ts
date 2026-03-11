@@ -1,19 +1,24 @@
-export interface ITelemetry {
-  id: string;
-  assetId: string;
-  cpuName: string;
-  cpuTotalUsagePercent: number;
-  cpuPerCoreUsage: number[];
-  cpuFrequency: number;
-  cpuTemperature: number | null;
-  memoryTotal: number;
-  memoryAvailable: number;
-  memoryUsed: number;
-  memoryUsagePercent: number;
-  batteryPercent: number | null;
-  batteryPowerPlugged: boolean;
-  batterySecondsLeft: number | null;
-  timestamp: Date;
+export interface ISystemTelemetryPayload {
+  mac_address: string;
+  timestamp: number;
+  cpu: {
+    cpu_name: string;
+    total_usage_percent: number;
+    per_core_usage_percent: number[];
+    logical_cores: number;
+    physical_cores: number;
+    frequency: number;
+    temperature: number | null;
+  };
+  memory: {
+    total: number;
+    available: number;
+    used: number;
+    usage_percent: number;
+  };
+  battery: {
+    percent: number | null;
+    power_plugged: boolean;
+    seconds_left: number | null;
+  };
 }
-
-export type ITelemetryCreate = Omit<ITelemetry, "id">;
