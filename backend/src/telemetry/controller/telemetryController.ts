@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../../users/controller/userAuthMiddleware.js";
-import { prisma } from "../../db/prisma.js";
-import { Params } from "../types.js";
+import { prisma } from "../../lib/prisma.js";
+import { Params } from "../../types/telemetry.type.js";
 
 const getHistoryTelemetry = async (req: AuthRequest & { params: Params }, res: Response) => {
     try {
