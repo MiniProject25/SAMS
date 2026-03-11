@@ -40,8 +40,8 @@ model Asset {
   status     Status      @default(OFFLINE)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-  ownerId    String?     @db.Uuid
-  owner      User?       @relation(fields: [ownerId], references: [id])
+  ownerId    String      @db.Uuid
+  owner      User        @relation(fields: [ownerId], references: [id])
   telemetry  Telemetry[]
   alerts     Alert[]
 }
@@ -52,7 +52,7 @@ model Telemetry {
   asset                Asset    @relation(fields: [assetId], references: [id])
   cpuName              String
   cpuTotalUsagePercent Float
-  cpuPerCoreUsage      Json
+  cpuPerCoreUsage      Float[]
   cpuFrequency         Float
   cpuTemperature       Float?
   memoryTotal          Float
@@ -63,6 +63,8 @@ model Telemetry {
   batteryPowerPlugged  Boolean
   batterySecondsLeft   Int?
   timestamp            DateTime 
+
+  @@index([assetId, timestamp])
 }
 
 model Alert {
