@@ -3,6 +3,7 @@ import { Server, Socket } from "socket.io";
 import redisClient from "../lib/redis.js";
 import { ISystemTelemetryPayload } from "../types/telemetry.type.js";
 import type { Asset, Telemetry } from "../generated/prisma/client.js";
+import { checkAlerts } from "./alert.socket.js";
 
 export const setUpTelemetrySocket = (io: Server) => {
   io.on("connection", (socket: Socket) => {
@@ -78,6 +79,8 @@ export const setUpTelemetrySocket = (io: Server) => {
             mac_address,
             latestTelemetry: telemetryRecord,
           });
+
+          checkAlerts(io, telemetryRecord, updatedAsset.ownerId);
         }
       } catch (error) {
         console.error("Error processing telemetry stream:", error);
