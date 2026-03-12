@@ -11,6 +11,8 @@ services:
       - custom-network
     env_file:
       - ../backend/.env
+    depends_on:
+      - redis
 
   frontend:
     image: node:24.7.0-alpine
@@ -25,6 +27,20 @@ services:
     env_file:
       - ../frontend/.env
 
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - custom-network
+    volumes:
+      - redis-data:/data
+    container_name: blera-redis
+    command: redis-server --appendonly yes
+
 networks:
   custom-network:
     driver: bridge
+
+volumes:
+  redis-data:
