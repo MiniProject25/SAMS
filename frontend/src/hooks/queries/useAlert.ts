@@ -1,15 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { SERVER_URL } from "../../config/config";
 import { useAuthStore } from "../../store/useAuthStore";
 
-export const useAlerts = () => {
+export const useAlerts = (page: number, limit: number = 10) => {
   const token = useAuthStore((state) => state.token);
 
   return useQuery({
     queryKey: ["alerts"],
     enabled: !!token,
     queryFn: async () => {
-      const response = await fetch(`${SERVER_URL}/api/alert`, {
+      const response = await fetch(`${SERVER_URL}/api/alert?page=${page}&limit=${limit}`, {
         headers: {
           authorization: `Bearer ${token}`,
         },
@@ -24,7 +24,7 @@ export const useAlerts = () => {
     },
     // This replaces onSuccess for data transformation
     select: (result) => {
-      return result.data.map((rawAlert: any) => {
+       const formattedAlerts = result.data.map((rawAlert: any) => {
         let derivedCategory: "THERMAL" | "PERFORMANCE" | "INFO" = "INFO";
 
         if (rawAlert.metric.includes("TEMP")) derivedCategory = "THERMAL";
@@ -43,7 +43,13 @@ export const useAlerts = () => {
           updatedAt: rawAlert.updatedAt,
         };
       });
+
+      return {
+        alerts: formattedAlerts,
+        totalPages: result.pagination?.totalPages || 1,
+      };
     },
+    placeholderData: keepPreviousData,
     staleTime: 1000 * 60, // 1 min
     refetchOnWindowFocus: true,
   });
