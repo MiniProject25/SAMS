@@ -13,7 +13,7 @@ export default function App() {
         <Route path="/register" element={<Register />} />
 
         {/* Protected Routes */}
-        <Route element={<ProtectedRoute />}>
+        {/* <Route element={<ProtectedRoute />}> */}
           {/* The Parent Route holds the Layout */}
           <Route path="/" element={<DashboardLayout />}>
 
@@ -29,7 +29,7 @@ export default function App() {
           </Route>
           {/* 404 Catch-all */}
           <Route path="*" element={<NotFound />} />
-        </Route>
+        {/* </Route> */}
       </Routes>
     </BrowserRouter>
   );

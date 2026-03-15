@@ -132,5 +132,3 @@ export default function Header() {
     </header>
   );
 }
-
-// Sub-component for the Modal to keep the Header clean

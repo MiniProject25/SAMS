@@ -25,3 +25,15 @@ export interface Alert {
   createdAt: string; 
   updatedAt: string;
 }
+
+export interface GroupedAlertAsset {
+  assetId: string; // The primary key for grouping
+  metrics: {
+    cpu?: number;
+    ram?: number;
+    temp?: number;
+    battery?: number;
+  };
+  activeAlerts: Alert[]; // All unresolved Sequelize alerts for this ID
+  highestSeverity: AlertSeverity;
+}

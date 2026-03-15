@@ -1,6 +1,7 @@
+import type { Alert } from "./Alerts";
+
 export type AssetStatus = "ONLINE" | "OFFLINE" | "MAINTENANCE";
 export type AlertSeverity = "INFO" | "WARNING" | "CRITICAL";
-
 
 export type Stats = {
   totalAssets: number;
@@ -12,7 +13,7 @@ export type Stats = {
 export interface TelemetryData {
   cpuTotalUsagePercent: number;
   cpuTemperature: number;
-  memmoryUsagePercent: number; 
+  memmoryUsagePercent: number;
   batteryPercent: number;
   batteryPowerPlugged: boolean;
   timeStamp: string;
@@ -20,8 +21,9 @@ export interface TelemetryData {
 
 export interface Asset {
   id: string;
-  hostname: string;
-  ipAddress: string;
+  name: string;
+  macAddr: string;
   status: AssetStatus;
-  latestTelemetry?: TelemetryData; 
+  activeAlerts: Alert[];
+  latestTelemetry?: TelemetryData;
 }
